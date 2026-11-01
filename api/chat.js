@@ -1,101 +1,112 @@
-// =====================================
-// ALFRED AI ASSISTANT - CHAT SYSTEM
-// =====================================
+<!DOCTYPE html><html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#050914"><title>ALFRED AI Assistant</title>
 
-const BACKEND_URL = "https://alfred-ai-backend-xabl.vercel.app";
+<link rel="stylesheet" href="style.css">
 
-// Send message to Alfred
-async function sendMessage(message) {
-    try {
-        const response = await fetch(`${BACKEND_URL}/api/chat`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                message: message
-            })
-        });
+</head><body><main class="app-container">
 
-        if (!response.ok) {
-            throw new Error("Server error: " + response.status);
-        }
+    <header class="top-bar">
+        <div class="brand">
+            <span class="brand-icon">A</span>
+            <div>
+                <h1>ALFRED</h1>
+                <p>PERSONAL AI ASSISTANT</p>
+            </div>
+        </div>
 
-        const data = await response.json();
+        <div class="connection-status">
+            <span class="status-dot"></span>
+            <span id="status">INITIALISING</span>
+        </div>
+    </header>
 
-        return data.reply || data.response || data.text || "I couldn't understand that.";
+    <section class="assistant-section">
 
-    } catch (error) {
-        console.error("ALFRED Error:", error);
-        return "I'm having trouble connecting to my AI brain. Please check my backend connection.";
-    }
-}
+        <div class="orb-container">
+            <div class="orb-ring ring-one"></div>
+            <div class="orb-ring ring-two"></div>
+            <div class="orb">
+                <span>A</span>
+            </div>
+        </div>
 
-// Display message in chat
-function addMessage(text, sender) {
-    const chatBox = document.getElementById("chat-box");
+        <h2>Good day, Sir.</h2>
 
-    if (!chatBox) {
-        console.error("Chat box not found!");
-        return;
-    }
+        <p id="assistant-message">
+            ALFRED is preparing your assistant.
+        </p>
 
-    const messageElement = document.createElement("div");
+        <div class="listening-indicator" id="listening-indicator">
+            READY TO ASSIST
+        </div>
 
-    messageElement.className = sender === "user"
-        ? "user-message"
-        : "alfred-message";
+    </section>
 
-    messageElement.textContent = text;
+    <section class="conversation-section">
 
-    chatBox.appendChild(messageElement);
+        <div class="section-heading">
+            <h3>CONVERSATION</h3>
+            <span>ALFRED AI</span>
+        </div>
 
-    chatBox.scrollTop = chatBox.scrollHeight;
-}
+        <div id="chat-box" class="chat-box">
+            <div class="message assistant-message">
+                <strong>ALFRED</strong>
+                <p>Welcome back, Sir. How may I assist you today?</p>
+            </div>
+        </div>
 
-// Handle sending messages
-async function handleSendMessage() {
+    </section>
 
-    const input = document.getElementById("user-input");
+    <section class="controls-section">
 
-    if (!input) return;
+        <div class="input-container">
+            <input
+                type="text"
+                id="user-input"
+                placeholder="Type your message, Sir..."
+                autocomplete="off"
+            >
 
-    const message = input.value.trim();
+            <button id="send-button" type="button">
+                SEND
+            </button>
+        </div>
 
-    if (!message) return;
+        <div class="voice-controls">
 
-    addMessage(message, "user");
+            <button
+                id="mic-button"
+                class="mic-button"
+                type="button"
+            >
+                🎙
+                <span> TALK TO ALFRED </span>
+            </button>
 
-    input.value = "";
+            <button
+                id="stop-button"
+                class="stop-button"
+                type="button"
+            >
+                STOP
+            </button>
 
-    addMessage("Thinking...", "alfred");
+        </div>
 
-    const reply = await sendMessage(message);
+    </section>
 
-    const chatBox = document.getElementById("chat-box");
+    <footer>
+        <p>ALFRED SYSTEMS © 2026</p>
+        <p>YOUR PERSONAL INTELLIGENCE</p>
+    </footer>
 
-    if (chatBox && chatBox.lastElementChild) {
-        chatBox.lastElementChild.textContent = reply;
-    }
-}
+</main>
 
-// Initialize chat buttons
-document.addEventListener("DOMContentLoaded", function () {
+<script src="script.js"></script>
 
-    const sendButton = document.getElementById("send-button");
-
-    const input = document.getElementById("user-input");
-
-    if (sendButton) {
-        sendButton.addEventListener("click", handleSendMessage);
-    }
-
-    if (input) {
-        input.addEventListener("keypress", function (event) {
-            if (event.key === "Enter") {
-                handleSendMessage();
-            }
-        });
-    }
-
-});
+</body>
+</html>
