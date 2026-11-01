@@ -1,112 +1,86 @@
-<!DOCTYPE html><html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#050914"><title>ALFRED AI Assistant</title>
+export default async function handler(req, res) {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
-<link rel="stylesheet" href="style.css">
+  if (req.method === "OPTIONS") {
+    return res.status(200).end();
+  }
 
-</head><body><main class="app-container">
+  if (req.method !== "POST") {
+    return res.status(405).json({
+      error: "Method not allowed"
+    });
+  }
 
-    <header class="top-bar">
-        <div class="brand">
-            <span class="brand-icon">A</span>
-            <div>
-                <h1>ALFRED</h1>
-                <p>PERSONAL AI ASSISTANT</p>
-            </div>
-        </div>
+  try {
+    const apiKey = process.env.GEMINI_API_KEY;
 
-        <div class="connection-status">
-            <span class="status-dot"></span>
-            <span id="status">INITIALISING</span>
-        </div>
-    </header>
+    if (!apiKey) {
+      return res.status(500).json({
+        error: "Gemini API key is missing"
+      });
+    }
 
-    <section class="assistant-section">
+    const { message, history = [] } = req.body || {};
 
-        <div class="orb-container">
-            <div class="orb-ring ring-one"></div>
-            <div class="orb-ring ring-two"></div>
-            <div class="orb">
-                <span>A</span>
-            </div>
-        </div>
+    if (!message || typeof message !== "string") {
+      return res.status(400).json({
+        error: "Message is required"
+      });
+    }
 
-        <h2>Good day, Sir.</h2>
+    const contents = [
+      ...history,
+      {
+        role: "user",
+        parts: [{ text: message }]
+      }
+    ];
 
-        <p id="assistant-message">
-            ALFRED is preparing your assistant.
-        </p>
+    const response = await fetch(
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" +
+      encodeURIComponent(apiKey),
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          systemInstruction: {
+            parts: [{
+              text: "You are ALFRED, a helpful, intelligent, polite personal AI assistant. Answer clearly and naturally."
+            }]
+          },
+          contents
+        })
+      }
+    );
 
-        <div class="listening-indicator" id="listening-indicator">
-            READY TO ASSIST
-        </div>
+    const data = await response.json();
 
-    </section>
+    if (!response.ok) {
+      console.error("Gemini error:", data);
 
-    <section class="conversation-section">
+      return res.status(response.status).json({
+        error: "Gemini API request failed"
+      });
+    }
 
-        <div class="section-heading">
-            <h3>CONVERSATION</h3>
-            <span>ALFRED AI</span>
-        </div>
+    const reply =
+      data.candidates?.[0]?.content?.parts
+        ?.map(part => part.text || "")
+        .join("") || "I couldn't generate a response.";
 
-        <div id="chat-box" class="chat-box">
-            <div class="message assistant-message">
-                <strong>ALFRED</strong>
-                <p>Welcome back, Sir. How may I assist you today?</p>
-            </div>
-        </div>
+    return res.status(200).json({
+      reply: reply
+    });
 
-    </section>
+  } catch (error) {
+    console.error(error);
 
-    <section class="controls-section">
-
-        <div class="input-container">
-            <input
-                type="text"
-                id="user-input"
-                placeholder="Type your message, Sir..."
-                autocomplete="off"
-            >
-
-            <button id="send-button" type="button">
-                SEND
-            </button>
-        </div>
-
-        <div class="voice-controls">
-
-            <button
-                id="mic-button"
-                class="mic-button"
-                type="button"
-            >
-                🎙
-                <span> TALK TO ALFRED </span>
-            </button>
-
-            <button
-                id="stop-button"
-                class="stop-button"
-                type="button"
-            >
-                STOP
-            </button>
-
-        </div>
-
-    </section>
-
-    <footer>
-        <p>ALFRED SYSTEMS © 2026</p>
-        <p>YOUR PERSONAL INTELLIGENCE</p>
-    </footer>
-
-</main>
-
-<script src="script.js"></script>
-
-</body>
-</html>
+    return res.status(500).json({
+      error: "Internal server error"
+    });
+  }
+}
