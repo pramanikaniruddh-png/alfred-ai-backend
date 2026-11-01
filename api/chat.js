@@ -1,68 +1,101 @@
-export default async function handler(req, res) {
-  if (req.method !== "POST") {
-    return res.status(405).json({
-      error: "Method not allowed"
-    });
-  }
+// =====================================
+// ALFRED AI ASSISTANT - CHAT SYSTEM
+// =====================================
 
-  try {
-    const { message } = req.body;
+const BACKEND_URL = "https://alfred-ai-backend-xabl.vercel.app";
 
-    if (!message) {
-      return res.status(400).json({
-        error: "Message is required"
-      });
+// Send message to Alfred
+async function sendMessage(message) {
+    try {
+        const response = await fetch(`${BACKEND_URL}/api/chat`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                message: message
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error("Server error: " + response.status);
+        }
+
+        const data = await response.json();
+
+        return data.reply || data.response || data.text || "I couldn't understand that.";
+
+    } catch (error) {
+        console.error("ALFRED Error:", error);
+        return "I'm having trouble connecting to my AI brain. Please check my backend connection.";
     }
-
-    const apiKey = process.env.GEMINI_API_KEY;
-
-    if (!apiKey) {
-      return res.status(500).json({
-        error: "Gemini API key is missing"
-      });
-    }
-
-    const response = await fetch(
-      "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-goog-api-key": apiKey
-        },
-        body: JSON.stringify({
-          systemInstruction: {
-            parts: [{
-              text: "You are ALFRED, a helpful, intelligent and professional personal AI assistant. Respond clearly and politely."
-            }]
-          },
-          contents: [{
-            parts: [{
-              text: message
-            }]
-          }]
-        })
-      }
-    );
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      return res.status(response.status).json({
-        error: data.error?.message || "Gemini API error"
-      });
-    }
-
-    const reply =
-      data.candidates?.[0]?.content?.parts?.[0]?.text;
-
-    return res.status(200).json({
-      reply: reply || "I couldn't generate a response."
-    });
-
-  } catch (error) {
-    return res.status(500).json({
-      error: "Backend error"
-    });
-  }
 }
+
+// Display message in chat
+function addMessage(text, sender) {
+    const chatBox = document.getElementById("chat-box");
+
+    if (!chatBox) {
+        console.error("Chat box not found!");
+        return;
+    }
+
+    const messageElement = document.createElement("div");
+
+    messageElement.className = sender === "user"
+        ? "user-message"
+        : "alfred-message";
+
+    messageElement.textContent = text;
+
+    chatBox.appendChild(messageElement);
+
+    chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+// Handle sending messages
+async function handleSendMessage() {
+
+    const input = document.getElementById("user-input");
+
+    if (!input) return;
+
+    const message = input.value.trim();
+
+    if (!message) return;
+
+    addMessage(message, "user");
+
+    input.value = "";
+
+    addMessage("Thinking...", "alfred");
+
+    const reply = await sendMessage(message);
+
+    const chatBox = document.getElementById("chat-box");
+
+    if (chatBox && chatBox.lastElementChild) {
+        chatBox.lastElementChild.textContent = reply;
+    }
+}
+
+// Initialize chat buttons
+document.addEventListener("DOMContentLoaded", function () {
+
+    const sendButton = document.getElementById("send-button");
+
+    const input = document.getElementById("user-input");
+
+    if (sendButton) {
+        sendButton.addEventListener("click", handleSendMessage);
+    }
+
+    if (input) {
+        input.addEventListener("keypress", function (event) {
+            if (event.key === "Enter") {
+                handleSendMessage();
+            }
+        });
+    }
+
+});
